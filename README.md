@@ -26,7 +26,7 @@ pip install -U boto
 Before running this playbook do the following to prepare
 
 * create AWS access and security key  - see [Amazon's
-  docs](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html)
+  docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html)
 
 The values generated will be copied to be used later.
 
