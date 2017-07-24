@@ -38,13 +38,27 @@ Generate an ssh key that will connect to your AWS instance with
 ssh-keygen -b 2048 -t rsa -C "awsdocnow" -f ~/.ssh/awsdocnow
 ```
 
+This file will also be used later. 
+
 Make a copy of `examples_aws_variables.yml` with
 
 ```
 cp examples_aws_variables.yml aws_variables.yml
 ```
 
-Copy your access and security key in the `aws_variables.yml` file. Make sure your AWS region matches the region you logged into and change it accordingly. If you want a beefier size machine change that also.
+Copy your access and security key in the `aws_variables.yml` file. Make sure your AWS region matches the region you logged into and change it accordingly. If you want a beefier size machine change that also. In addition copy the ssh-key generated above to replace the `ssh_public_key` variable. If you followed the steps above it would read 
+
+```
+ssh_public_key: '~/.ssh/awsdocnow.pub'
+```
+
+The boto file installed on MacOSX fails to be imported to your library for
+[whatever reason](https://github.com/boto/boto/issues/3194) so export the python
+path with
+
+```
+export PYTHONPATH=/usr/local/lib/python2.7/site-packages
+```
 
 ### Run the playbook
 
