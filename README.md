@@ -28,7 +28,23 @@ Before running this playbook do the following to prepare
 * create AWS access and security key  - see [Amazon's
   docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html)
 
-The values generated will be copied to be used later.
+We will save these credentials in a file with the following steps
+
+```
+mkdir ~/.aws
+```
+
+if you don't already have one. Then add a `credentials` file with your access
+and secret keys in this directory. The contents of the file should look like
+this
+
+```
+cat ~/.aws/credentials 
+[default]
+aws_access_key_id = AYOURKEYFILE
+aws_secret_access_key = Jyoursecretkeymagicalfilet
+```
+
 
 ### Set up your host
 
