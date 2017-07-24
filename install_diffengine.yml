@@ -1,0 +1,116 @@
+---
+- hosts: localhost
+  connection: local
+  vars_files:
+    - aws_variables.yml
+  tasks:
+  - name: add keys to AWS
+    ec2_key:
+        name: '{{ environment_public_ssh_key_name }}'
+        key_material: '{{ item }}'
+        state: present
+        force: false
+        region: '{{ vpc_region }}'
+        aws_access_key: '{{ aws_access_key }}'
+        aws_secret_key: '{{ aws_secret_key }}'
+    with_file: '{{ ssh_public_key }}'
+
+  - name: create security group
+    ec2_group:
+      name: docnow
+      description: diffengine ssh rules
+      region: '{{ vpc_region }}'
+      aws_access_key: '{{ aws_access_key }}'
+      aws_secret_key: '{{ aws_secret_key }}'
+      rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+      state: present
+
+  - name: create an ec2 instance
+    ec2:
+      state: present
+      image: '{{ ami_base_image_id }}'
+      instance_type: '{{ aws_instance }}'
+      wait: 'yes'
+      wait_timeout: 600
+      key_name: '{{ environment_public_ssh_key_name }}'
+      region: '{{ vpc_region }}'
+      aws_access_key: '{{ aws_access_key }}'
+      aws_secret_key: '{{ aws_secret_key }}'
+      group_id: '{{ instance_security_groups }}'
+    register: ec2
+
+  - debug: var=ec2
+  - debug: var=ec2.instances
+  - debug: var=ec2.instances[0].public_ip
+
+  - name: add host to manage remotely
+    add_host:
+        hostname: '{{ item.public_ip }}'
+        groupname: 'diffenginehost'
+    with_items: '{{ ec2.instances }}'
+
+  - name: wait for instance to listen for SSH
+    wait_for:
+        state: started
+        host: '{{ item.public_ip }}'
+        port: 22
+        delay: 10
+        timeout: 360
+    with_items: '{{ ec2.instances }}'
+
+- hosts: diffenginehost
+  gather_facts: no
+  user: ubuntu
+  tasks:
+
+  - name: install minimal python
+    raw: sudo bash -c "test -e /usr/bin/python || (apt install -qy python-minimal aptitude)"
+
+  - name: update cache
+    apt:
+        update_cache: yes
+        upgrade: yes
+        cache_valid_time: 3600
+
+  - name: register phantomjs install
+    stat:
+        path: /usr/local/bin/phantomjs
+    register: phantomjs_stat
+
+  - name: install phantomjs and diffengine dependency
+    apt:
+        name: '{{ item }}'
+        state: present
+        update_cache: yes
+    with_items:
+        - python3-pip
+        - libfontconfig
+
+  - name: check version and register
+    shell: phantomjs -v
+    register: phantomjs_version
+    when: phantomjs_stat.stat.exists == True
+
+  - name: install phantomjs
+    unarchive:
+        src: 'https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2'
+        dest: '/usr/local/share'
+        remote_src: True
+    when: phantomjs_stat.stat.exists == False or phantomjs_version != '2.1.1'
+
+  - name: create symbolic links
+    file:
+        src: '/usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs'
+        dest: '/usr/local/bin/phantomjs'
+        state: link
+    when: phantomjs_stat.stat.exists == False or phantomjs_version != '2.1.1'
+
+  - name: install diffengine
+    pip:
+        name: diffengine
+        extra_args: '--process-dependency-links'
+        executable: pip3

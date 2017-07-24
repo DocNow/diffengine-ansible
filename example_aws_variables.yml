@@ -1,0 +1,13 @@
+---
+# this is the Xenial AMI
+ami_base_image_id: 'ami-d6557ac0'
+# this is the smallest size VM
+aws_instance: 't1.micro'
+# if you already have an AWS pem key you can use that here
+environment_public_ssh_key_name: 'ansshkey'
+# your AWS region
+vpc_region: 'us-east-1'
+aws_access_key: 'AYOURAWSACCESSKEYQ'
+aws_secret_key: 'vsurelyyouWerentexpectingMykeywereyouKN'
+# path to the public key file for authentication
+ssh_public_key: '/path/to/public_key.id_rsa.pub'
